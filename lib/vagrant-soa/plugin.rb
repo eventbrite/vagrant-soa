@@ -24,6 +24,10 @@ DESC
         require_relative 'actions/setup_machine'
         hook.prepend(Action::SetupMachine)
       end
+      action_hook 'setup_machine', 'machine_action_provision' do |hook|
+        require_relative 'actions/setup_machine'
+        hook.prepend(Action::SetupMachine)
+      end
       action_hook 'setup_machine', 'machine_action_reload' do |hook|
         require_relative 'actions/setup_machine'
         hook.prepend(Action::SetupMachine)
