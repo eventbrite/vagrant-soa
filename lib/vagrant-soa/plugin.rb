@@ -20,17 +20,10 @@ DESC
       end
 
       # define hooks
-      action_hook 'setup_machine', 'machine_action_up' do |hook|
-        require_relative 'actions/setup_machine'
-        hook.prepend(Action::SetupMachine)
-      end
-      action_hook 'setup_machine', 'machine_action_provision' do |hook|
-        require_relative 'actions/setup_machine'
-        hook.prepend(Action::SetupMachine)
-      end
-      action_hook 'setup_machine', 'machine_action_reload' do |hook|
-        require_relative 'actions/setup_machine'
-        hook.prepend(Action::SetupMachine)
+      action_hook 'install_services' do |hook|
+        require_relative 'actions/install_services'
+        # we need to install services before we AddModuleFacts
+        hook.before VagrantPlugins::PuppetModuleRegistry::Action::AddModuleFacts, Action::InstallServices
       end
 
     end

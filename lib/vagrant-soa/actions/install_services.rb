@@ -1,7 +1,7 @@
 module VagrantPlugins
   module Soa
     class Action
-      class SetupMachine
+      class InstallServices
 
         def initialize(app, env)
           @app = app
@@ -177,6 +177,8 @@ module VagrantPlugins
         end
 
         def call(env)
+          require 'debugger'
+          debugger
           install_services()
           @app.call(env)
         end
