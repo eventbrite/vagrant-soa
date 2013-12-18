@@ -177,9 +177,11 @@ module VagrantPlugins
         end
 
         def call(env)
-          require 'debugger'
-          debugger
-          install_services()
+          # determine if provision is enabled, if we provided the
+          # "--no-provision" flag this would be false. if it isn't present, we
+          # should consider provision enabled
+          provision_enabled = env.has_key?(:provision_enabled) ? env[:provision_enabled] : true
+          install_services() if provision_enabled
           @app.call(env)
         end
 
