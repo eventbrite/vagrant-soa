@@ -7,6 +7,7 @@ module VagrantPlugins
           @app = app
           @env = env
           @soa = env[:global_config].soa
+          @puppet_fact_generator = env[:global_config].puppet_fact_generator
           @puppet_module_registry = env[:global_config].puppet_module_registry
           @git = get_local_git()
         end
@@ -115,12 +116,49 @@ module VagrantPlugins
           return target_directory
         end
 
+        # When services are installed they can specify 'home_dir' in their
+        # vagrant config. This needs to be a path that exists within the VM and
+        # points to their desired home directory.
+        #
+        #   These custom facts will be of the form: "#{service}_home_dir"
+        def generate_service_home_facts()
+          if @soa.services
+            @soa.services.each_pair { |service, config|
+            }
+          end
+        end
+
+        def register_service_home_fact(service, config)
+          home_dir = config.fetch('home_dir', nil)
+          # not sure if there is a better way to do this in ruby, we don't want a
+          # trailing slash if "home_dir" is empty
+          if home_dir
+            full_path = File.join(
+              @soa.vagrant_install_dir,
+              service,
+              home_dir
+            )
+          else
+            full_path = File.join(
+              @soa.vagrant_install_dir,
+              service
+            )
+          end
+          if File.directory?(full_path)
+            @env[:ui].warn "Invalid home_dir passed for service:"\
+              " #{service}, home_dir: #{full_path}"
+          else
+            @puppet_fact_generator.add_fact("#{service}_home_dir", full_path)
+          end
+        end
+
         # To install a service we clone the service repo and add the puppet
         # path to @puppet_module_registry.puppet_module_paths.
         def install_service(service, config)
           target_directory = clone_service_repo(service, config)
           puppet_path = config.fetch('puppet_path', 'puppet')
           full_path = File.join(target_directory, puppet_path)
+          register_service_home_fact(service, config)
           @puppet_module_registry.register_module_path(service, full_path)
         end
 

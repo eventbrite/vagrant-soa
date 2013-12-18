@@ -10,6 +10,9 @@ Vagrant.configure('2') do |config|
   config.vm.box = 'precise64'
   config.vm.box_url = 'http://files.vagrantup.com/precise64.box'
 
+  config.soa.install_dir = '.SERVICES'
+  config.soa.vagrant_install_dir = '/home/vagrant/.SERVICES'
+
   config.soa.services = {
     'example_service' => {
       'puppet_path' => 'services/example_service/puppet',
