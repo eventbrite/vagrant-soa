@@ -12,8 +12,8 @@ Vagrant.configure('2') do |config|
 
   config.soa.services = {
     'example_service' => {
-      'puppet_path' => 'services',
-      'github_url' => 'git@github.com:eventbrite/vagrant-puppet-module-registry.git',
+      'puppet_path' => 'services/example_service/puppet',
+      'github_url' => 'git@github.com:eventbrite/vagrant-soa.git'
     },
   }
 
