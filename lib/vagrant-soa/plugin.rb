@@ -4,6 +4,11 @@ rescue LoadError
   abort 'vagrant-soa must be loaded in a Vagrant environment.'
 end
 
+begin
+  require 'vagrant-puppet-module-registry'
+rescue LoadError
+  abort 'vagrant-soa depends on the `vagrant-puppet-module-registry` plugin.'
+end
 
 module VagrantPlugins
   module Soa
