@@ -10,6 +10,9 @@ rescue LoadError
   abort 'vagrant-soa depends on the `vagrant-puppet-module-registry` plugin.'
 end
 
+# Add our custom translations to the load path
+I18n.load_path << File.expand_path("../../../locales/en.yml", __FILE__)
+
 module VagrantPlugins
   module Soa
     class Plugin < Vagrant.plugin('2')

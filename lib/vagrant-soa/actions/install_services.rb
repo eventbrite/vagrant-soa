@@ -1,3 +1,5 @@
+require_relative '../errors'
+
 module VagrantPlugins
   module Soa
     class Action
@@ -10,13 +12,19 @@ module VagrantPlugins
           @puppet_fact_generator = env[:global_config].puppet_fact_generator
           @puppet_module_registry = env[:global_config].puppet_module_registry
           @git = get_local_git()
+          # we use the local_data_path of the machine since vagrant ensures it
+          # exists as well as mounts it to the VM for us.
+          @install_dir = env[:machine].env.local_data_path.join('services')
+          # this "/vagrant" dir is hard coded in vagrant as well:
+          # https://github.com/mitchellh/vagrant/blob/master/plugins/kernel_v2/config/vm.rb#L385-L389
+          @vagrant_install_dir = '/vagrant'
         end
 
         # Get the proper git to clone the service repos.
         def get_local_git
           git = `which git`.chomp
           if git == ""
-            raise 'Please install `git` before continuing.'
+            raise Soa::Errors::GitRequired.new
           else
             return git
           end
@@ -28,7 +36,9 @@ module VagrantPlugins
           if not updated
             # pop back to the original directory
             Dir.chdir pwd
-            raise "Error updating branch: #{target_branch} for #{service}"
+            raise Soa::Errors::UpdatingRepoFailed,
+              target_branch: target_branch,
+              service: service
           else
             # pop back to the original directory
             if chdir_on_success
@@ -40,18 +50,23 @@ module VagrantPlugins
           end
         end
 
-        # When installing a service we have to clone the service repository. Ideally,
-        # we would manage these modules with librarian-puppet and the Puppetfile, but
-        # because services depend on files that aren't contained within their puppet
-        # module (ie. requirements.txt or uwsgi handles etc.), cloning the repo is
-        # the next best solution.
+        # When installing a service we have to clone the service repository.
+        # Ideally, we would manage these modules with librarian-puppet and the
+        # Puppetfile, but because services depend on files that aren't
+        # contained within their puppet module (ie. requirements.txt or uwsgi
+        # handlers etc.), cloning the repo is the next best solution.
         def clone_service_repo(service, config)
-          target_directory = File.join @soa.install_dir, service
+          target_directory = File.join @install_dir, service
 
           # make sure the repo is checked out
           if File.directory? target_directory
             @env[:ui].info "Service: #{service} is already checked out"
           else
+            if not config['github_url'] || @soa.github_base
+              raise Soa::Errors::NoGithubUrlProvided,
+                service: service
+            end
+
             github_target = config['github_url'] ? config['github_url'] : "#{@soa.github_base}/#{service}.git"
             @env[:ui].info(
               "Cloning service: #{service} (#{github_target}) to target directory:"\
@@ -59,7 +74,8 @@ module VagrantPlugins
             )
             success = system "#{@git} clone --recurse-submodules #{github_target} #{target_directory}"
             if not success
-              raise "Error cloning service: #{service}"
+              raise Soa::Errors::CloningServiceFailed,
+                service: service
             else
               @env[:ui].success "Successfully checked out service: #{service}"
             end
@@ -74,7 +90,6 @@ module VagrantPlugins
           # already have checked out (stolen from boxen)
           clean = `#{@git} status --porcelain`.empty?
           current_branch = `#{@git} rev-parse --abbrev-ref HEAD`.chomp
-          upstream_changes = `#{@git} rev-list --count master..origin/master`.chomp != '0'
           fast_forwardable = `#{@git} rev-list --count origin/master..master`.chomp == '0'
           if current_branch.empty?
             ref = `#{@git} log -1 --pretty=format:%h`
@@ -101,7 +116,9 @@ module VagrantPlugins
             if not checkout_target
               # pop back to the original directory
               Dir.chdir(pwd)
-              raise "Error checking out branch: #{target_branch} for #{service}"
+              raise Soa::Errors::BranchCheckoutFailed,
+                target_branch: target_branch,
+                service: service
             else
               @env[:ui].success(
                 "Successfully checked out branch: #{target_branch}"\
@@ -116,31 +133,24 @@ module VagrantPlugins
           return target_directory
         end
 
-        # When services are installed they can specify 'home_dir' in their
+        # When services are installed they can specify a 'home_dir' in their
         # vagrant config. This needs to be a path that exists within the VM and
         # points to their desired home directory.
         #
         #   These custom facts will be of the form: "#{service}_home_dir"
-        def generate_service_home_facts()
-          if @soa.services
-            @soa.services.each_pair { |service, config|
-            }
-          end
-        end
-
         def register_service_home_fact(service, config)
           home_dir = config.fetch('home_dir', nil)
           # not sure if there is a better way to do this in ruby, we don't want a
           # trailing slash if "home_dir" is empty
           if home_dir
             full_path = File.join(
-              @soa.vagrant_install_dir,
+              @vagrant_install_dir,
               service,
               home_dir
             )
           else
             full_path = File.join(
-              @soa.vagrant_install_dir,
+              @vagrant_install_dir,
               service
             )
           end
@@ -165,11 +175,6 @@ module VagrantPlugins
         # If any services are specified, install them
         def install_services()
           if @soa.services
-            # setup an install directory where we'll store the service repos we
-            # install
-            if not File.directory?(@soa.install_dir)
-              FileUtils.mkdir_p(@soa.install_dir)
-            end
             @soa.services.each_pair do |service, config|
               install_service(service, config)
             end

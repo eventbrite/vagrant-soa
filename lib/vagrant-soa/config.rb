@@ -2,22 +2,16 @@ module VagrantPlugins
   module Soa
     class Config < Vagrant.plugin(2, :config)
       attr_accessor :services
-      attr_accessor :install_dir
-      attr_accessor :vagrant_install_dir
       attr_accessor :github_base
 
       def initialize
         @services = UNSET_VALUE
-        @install_dir = UNSET_VALUE
-        @vagrant_install_dir = UNSET_VALUE
         @github_base = UNSET_VALUE
       end
 
       def finalize!
         @services = nil if @services == UNSET_VALUE
-        @install_dir = '.SERVICES' if @install_dir == UNSET_VALUE
-        @vagrant_install_dir = nil if @vagrant_install_dir == UNSET_VALUE
-        @github_base = 'git@github.com:eventbrite' if @github_base == UNSET_VALUE
+        @github_base = nil if @github_base == UNSET_VALUE
       end
 
       def validate(machine)

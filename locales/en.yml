@@ -1,0 +1,15 @@
+en:
+    vagrant:
+        errors:
+            git_required: |-
+                Please install `git` before continuing.
+            git_update_failed: |-
+                Error updating branch: '%{target_branch}' for '%{service}'.
+            git_clone_faield: |-
+                Error cloning service: '%{service}'.
+            git_checkout_failed: |-
+                Error checking out branch: '%{target_branch}' for '%{service}'.
+            missing_github_url: |-
+                No `github_url` specified for service: '%{service}'. Either
+                specify the `github_url` or set `cofing.soa.github_base` to
+                the organization's github.
