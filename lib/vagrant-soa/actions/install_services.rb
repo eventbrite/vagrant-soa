@@ -17,7 +17,7 @@ module VagrantPlugins
           @install_dir = env[:machine].env.local_data_path.join('services')
           # this "/vagrant" dir is hard coded in vagrant as well:
           # https://github.com/mitchellh/vagrant/blob/master/plugins/kernel_v2/config/vm.rb#L385-L389
-          @vagrant_install_dir = '/vagrant'
+          @vagrant_install_dir = '/vagrant/.vagrant/services'
         end
 
         # Get the proper git to clone the service repos.
