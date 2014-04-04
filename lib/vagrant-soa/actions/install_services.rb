@@ -8,9 +8,9 @@ module VagrantPlugins
         def initialize(app, env)
           @app = app
           @env = env
-          @soa = env[:global_config].soa
-          @puppet_fact_generator = env[:global_config].puppet_fact_generator
-          @puppet_module_registry = env[:global_config].puppet_module_registry
+          @soa = env[:machine].config.soa
+          @puppet_fact_generator = env[:machine].config.puppet_fact_generator
+          @puppet_module_registry = env[:machine].config.puppet_module_registry
           @git = get_local_git()
           # we use the local_data_path of the machine since vagrant ensures it
           # exists as well as mounts it to the VM for us.
