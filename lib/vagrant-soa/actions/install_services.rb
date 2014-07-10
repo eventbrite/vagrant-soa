@@ -1,3 +1,4 @@
+require 'fileutils'
 require_relative '../errors'
 
 module VagrantPlugins
@@ -162,11 +163,23 @@ module VagrantPlugins
           end
         end
 
+        def symlink_local_service(service, config)
+          target_directory = File.join @install_dir, service
+          # make sure the repo is checked out
+          if File.directory? target_directory
+            @env[:ui].info "Local Service: #{service} is already symlinked"
+          else
+            FileUtils.symlink File.expand_path(config['local_path']), target_directory
+            @env[:ui].info "Symlinking local service: #{service} to #{target_directory}"
+          end
+          return target_directory
+        end
+
         # To install a service we clone the service repo and add the puppet
         # path to @puppet_module_registry.puppet_module_paths.
         def install_service(service, config)
           if config.has_key? 'local_path'
-            target_directory = File.expand_path config['local_path']
+            target_directory = symlink_local_service(service, config)
           else
             target_directory = clone_service_repo(service, config)
           end
