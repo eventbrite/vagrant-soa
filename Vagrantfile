@@ -11,6 +11,9 @@ Vagrant.configure('2') do |config|
       'puppet_path' => 'services/example_service/puppet',
       'github_url' => 'git@github.com:eventbrite/vagrant-soa.git'
     },
+    'local_service' => {
+      'local_path' => './services/local_service',
+    },
   }
 
   config.vm.provision 'puppet' do |puppet|

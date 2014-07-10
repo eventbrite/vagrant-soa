@@ -165,7 +165,11 @@ module VagrantPlugins
         # To install a service we clone the service repo and add the puppet
         # path to @puppet_module_registry.puppet_module_paths.
         def install_service(service, config)
-          target_directory = clone_service_repo(service, config)
+          if config.has_key? 'local_path'
+            target_directory = File.expand_path config['local_path']
+          else
+            target_directory = clone_service_repo(service, config)
+          end
           puppet_path = config.fetch('puppet_path', 'puppet')
           full_path = File.join(target_directory, puppet_path)
           register_service_home_fact(service, config)
