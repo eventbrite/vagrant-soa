@@ -165,26 +165,27 @@ module VagrantPlugins
 
         def symlink_local_service(service, config)
           target_directory = File.join @install_dir, service
-          # make sure the repo is checked out
-          if File.directory? target_directory
-            @env[:ui].info "Local Service: #{service} is already symlinked"
-          else
-            FileUtils.symlink File.expand_path(config['local_path']), target_directory
-            @env[:ui].info "Symlinking local service: #{service} to #{target_directory}"
-          end
+          FileUtils.symlink File.expand_path(config['local_path'], @soa.vagrant_work_dir), target_directory, :force => true
+          @env[:ui].info "Symlinking local service: #{service} to #{target_directory}"
           return target_directory
         end
 
         # To install a service we clone the service repo and add the puppet
         # path to @puppet_module_registry.puppet_module_paths.
         def install_service(service, config)
-          if config.has_key? 'local_path'
+          if config.has_key?('local_path')
+            if not @soa.local_work_dir and not @soa.vagrant_work_dir
+              @env[:ui].error "You must specify 'config.soa.local_work_dir' and 'config.soa.vagrant_work_dir' to setup a local service"
+              return
+            end
             target_directory = symlink_local_service(service, config)
+            puppet_directory = File.expand_path(config['local_path'], @soa.local_work_dir)
           else
             target_directory = clone_service_repo(service, config)
+            puppet_directory = target_directory
           end
           puppet_path = config.fetch('puppet_path', 'puppet')
-          full_path = File.join(target_directory, puppet_path)
+          full_path = File.join(puppet_directory, puppet_path)
           register_service_home_fact(service, config)
           @puppet_module_registry.register_module_path(service, full_path)
         end
